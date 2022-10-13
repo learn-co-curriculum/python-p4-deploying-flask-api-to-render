@@ -43,68 +43,14 @@ started!
 To make sure you're able to deploy your application, you'll need to do the
 following:
 
-### Sign Up for a Heroku Account
+### Sign Up for a Render Account
 
 You can sign up at for a free account at
-[https://signup.heroku.com/devcenter][heroku signup].
+[https://dashboard.render.com/][render dashboard]. We recommend signing up using
+your GitHub account- this will streamline the process of connecting your
+applications to Render later on.
 
-### Download the Heroku CLI Application
-
-Download the [Heroku CLI][heroku cli]. This will let you run commands from your
-terminal to deploy and interact with your application on Heroku.
-
-**For OSX users**, you can use Homebrew to install the CLI:
-
-```console
-$ brew tap heroku/brew && brew install heroku
-```
-
-**For WSL users**, run this command in the Ubuntu terminal:
-
-```console
-$ curl https://cli-assets.heroku.com/install.sh | sh
-```
-
-If you run into issues installing, check out the [Heroku CLI][heroku cli]
-downloads page for more options.
-
-After downloading, **log in to Heroku** via the CLI in the terminal:
-
-```console
-$ heroku login
-```
-
-This will open a browser window to log you into your Heroku account. After
-logging in, close the browser window and return to the terminal. You can run
-`heroku whoami` in the terminal to verify that you have logged in successfully.
-
-### Install the Latest Ruby Version
-
-Verify which version of Ruby you're running by entering this in the terminal:
-
-```console
-$ ruby -v
-```
-
-Make sure that the Ruby version you're running is listed in the [supported
-runtimes][] by Heroku. At the time of writing, supported versions are 2.6.8,
-2.7.4, or 3.0.2. Our recommendation is 2.7.4, but make sure to check the site
-for the latest supported versions.
-
-If it's not, you can use `rvm` to install a newer version of Ruby:
-
-```console
-$ rvm install 2.7.4 --default
-```
-
-You should also install the latest versions of `bundler` and `rails`:
-
-```console
-$ gem install bundler
-$ gem install rails
-```
-
-### Install Postgresql
+### Install PostgreSQL
 
 Heroku requires that you use PostgreSQL for your database instead of SQLite.
 PostgreSQL (or just Postgres for short) is an advanced database management
@@ -134,7 +80,7 @@ $ sudo service postgresql start
 ```
 
 Finally, you'll also need to create a database user so that you are able to
-connect to the database from Rails. First, check what your operating system
+connect to the database from Flask. First, check what your operating system
 username is:
 
 ```console
@@ -176,6 +122,8 @@ $ brew services start postgresql
 
 Phew! With that out of the way, let's get started on building our Rails
 application and deploying it to Heroku.
+
+***
 
 ## Creating a Rails App to Deploy
 
@@ -429,13 +377,13 @@ Before you move on, make sure you can answer the following questions:
 
 ## Resources
 
-- [Deploying a Rails 6 App to Heroku][heroku rails deploying guide]
+- [Deploy a Flask App - Render][render flask]
 - [Rails Troubleshooting on Heroku][troubleshooting guide on heroku]
 
-[heroku signup]: https://signup.heroku.com/devcenter
+[render dashboard]: https://dashboard.render.com/
 [heroku cli]: https://devcenter.heroku.com/articles/heroku-cli#download-and-install
 [supported runtimes]: https://devcenter.heroku.com/articles/ruby-support#supported-runtimes
 [postgresql wsl]: https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
-[heroku rails deploying guide]: https://devcenter.heroku.com/articles/getting-started-with-rails6
+[render flask]: https://render.com/docs/deploy-flask
 [troubleshooting guide on heroku]: https://devcenter.heroku.com/articles/getting-started-with-rails6#troubleshooting
 [postgres downloads page]: https://postgresapp.com/downloads.html
