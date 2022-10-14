@@ -120,85 +120,206 @@ service:
 $ brew services start postgresql
 ```
 
-Phew! With that out of the way, let's get started on building our Rails
-application and deploying it to Heroku.
+Phew! With that out of the way, let's get started on building our Flask
+application and deploying it to Render.
 
 ***
 
-## Creating a Rails App to Deploy
+## Creating a Flask App to Deploy
 
-We'll be following the steps in the
-[Heroku Rails Deploying Guide][heroku rails deploying guide], so if you get
+We'll be following the steps in Render's
+["Deploy a Flask App"][render flask] guide, so if you get
 stuck and are looking for more assistance, check that guide first.
 
-The first thing we'll need to do is create our new Rails application. Make
+The first thing we'll need to do is create our new Flask application. Make
 sure you're in a non-lab directory, then run:
 
 ```console
-$ rails new bird-app --api --minimal --database=postgresql
+$ mkdir bird-app && cd $_
+$ pipenv install Flask gunicorn psycopg2-binary Flask-SQLAlchemy Flask-Migrate SQLAlchemy-Serializer Flask-RESTful
 ```
 
-This will set up our app to run in API mode, with the minimum dependencies
-needed, and with Postgresql as the database.
-
-Next, we'll need to configure our `Gemfile.lock` file to support the same OS as
-Heroku, which runs Ubuntu. This way, regardless of what OS you're using in
-development, `bundler` will be able to install the same gems on Heroku using any
-Ubuntu-specific gem dependencies.
-
-`cd` into the app, and run this command:
+This will set create an application directory and install some valuable
+libraries for building a RESTful API. Let's also run the following command to
+generate a `requirements.txt` file:
 
 ```console
-$ bundle lock --add-platform x86_64-linux --add-platform ruby
+$ pipenv requirements > requirements.txt
 ```
 
-This will add additional platforms to your `Gemfile.lock` file that will allow
-the necessary dependencies to be installed after you deploy your app.
+`requirements.txt` is very similar to a Pipfile- the primary difference here is
+that instead of supporting a local virtual environment through pipenv, it
+supports the creation of an application environment on a PaaS platform. (There
+are some different tools that use this file as well.)
 
-## Building the Demo App
+### Creating a PostgreSQL Database on Render
 
-Next, let's set up up a migration, model, route, and controller so that
-we have some data to display in our application:
+Using SQLite, our database was generated in a file in our application directory.
+With PostgreSQL, the database is stored elsewhere- typically on a server
+dedicated to databases. Ours will be stored on a server at Render.
+
+From your Render dashboard, click the "New+" button and select PostgreSQL:
+
+![dropdown menu containing static site, web service, private service, background
+worker, cron job, postgresql, redis, and blueprint. postgresql is selected.](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres.png
+)
+
+Next, configure your database with a name, database name, user, and timezone.
+These can be whichever values you feel are best.
+
+![form with fields name, database, user, region, postgresql version, and datadog
+api key](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres-config.png
+)
+
+Finally, create your database. It will expire after 90 days; you can always make
+a new one, but there are paid options available as well. For now, select the
+free tier:
+
+![payment options for render databases. the free tier is selected. there is a
+create database button at the bottom that will allow users to finish creating
+their database](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres-payment.png
+)
+
+From here, scroll down in the new database configuration page and copy the
+"External Database URL". Modify the protocol to say `postgresql` instead of
+`postgres` (SQLAlchemy is picky) and run the following command in your project
+root directory:
 
 ```console
-$ rails g resource Bird name species
+$ export DATABASE_URI=<External Database URL goes here>
 ```
 
-Add this data to the `db/seeds.rb` file:
+Now we're ready to start building our app.
 
-```rb
-Bird.create!(name: 'Black-Capped Chickadee', species: 'Poecile Atricapillus')
-Bird.create!(name: 'Grackle', species: 'Quiscalus Quiscula')
-Bird.create!(name: 'Common Starling', species: 'Sturnus Vulgaris')
-Bird.create!(name: 'Mourning Dove', species: 'Zenaida Macroura')
+### Building the Demo App
+
+Next, let's set up our app, models, and migrations to get things started:
+
+```py
+# app.py
+
+import os
+
+from flask import Flask, jsonify, make_response
+from flask_migrate import Migrate
+from flask_restful import Api, Resource
+
+from models import db, Bird
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.json.compact = False
+
+migrate = Migrate(app, db)
+db.init_app(app)
+
+api = Api(app)
+
+class Birds(Resource):
+
+    def get(self):
+        birds = [bird.to_dict() for bird in Bird.query.all()]
+        return make_response(jsonify(birds), 200)
+
+api.add_resource(Birds, '/birds')
+
+class BirdByID(Resource):
+    def get(self, id):
+        bird = Bird.query.filter_by(id=id).first().to_dict()
+        return make_response(jsonify(bird), 200)
+
+api.add_resource(BirdByID, '/birds/<int:id>')
+
 ```
 
-Then run this command to generate the database and run the migrations and seed
+```py
+# models.py
+
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy_serializer import SerializerMixin
+
+db = SQLAlchemy()
+
+class Bird(db.Model, SerializerMixin):
+    __tablename__ = 'birds'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    species = db.Column(db.String)
+
+    def __repr__(self):
+        return f'<Bird {self.name} | Species: {self.species}>'
+
+```
+
+Add this data to the `seed.py` file:
+
+```py
+# seed.py
+
+from app import app
+from models import db, Bird
+
+db.init_app(app)
+
+with app.app_context():
+
+    print('Deleting existing birds...')
+    Bird.query.delete()
+
+    print('Creating bird objects...')
+    chickadee = Bird(name='Black-Capped Chickadee', species='Poecile Atricapillus')
+    grackle = Bird(name='Grackle', species='Quiscalus Quiscula')
+    starling = Bird(name='Common Starling', species='Sturnus Vulgaris')
+    dove = Bird(name='Mourning Dove', species='Zenaida Macroura')
+
+    print('Adding bird objects to transaction...')
+    db.session.add_all([chickadee, grackle, starling, dove])
+
+    print('Committing transaction...')
+    db.session.commit()
+
+    print('Complete.')
+
+```
+
+Then run these commands to generate the database and run the migrations and seed
 file:
 
 ```console
-$ rails db:create db:migrate db:seed
+$ flask db init
+# => ...
+$ flask db revision --autogenerate -m'create table birds'
+# => ...
+$ flask db upgrade
+# => ...
+$ python seed.py
+# => Deleting existing birds...
+# => Creating bird objects...
+# => Adding bird objects to transaction...
+# => Committing transaction...
+# => Complete.
 ```
 
-> `rails db:create` creates a new Postgresql database to be associated with your
-> application based on the configuration in the `config/database.yml` file.
-> Unlike with SQLite, the actual database file isn't created in the `db` folder;
-> it lives elsewhere in your file system, depending on your Postgresql
-> configuration. If you have problems with this step, see the
+> `flask db upgrade` creates a new PostgreSQL database to be associated with your
+> application based on the configuration on Render and in `models.py`.
+> Unlike with SQLite, the actual database file isn't created in the
+> application's folder;
+> it lives on Render's servers and will not show up in your directory structure
+> at all. If you have problems with this step, see the
 > **Troubleshooting** section below.
 
-Finally, edit the `app/birds_controller.rb` file and add an `index` action:
+To make sure the app works locally before deploying, run `gunicorn app:app` and visit
+[http://localhost:8000/birds](http://localhost:8000/birds).
 
-```rb
-  # GET /birds
-  def index
-    birds = Bird.all
-    render json: birds
-  end
-```
+> **NOTE: gunicorn runs on port 8000 by default. Because this does not conflict
+> with any system ports on MacOS, Windows, or Linux, we won't change it here.
 
-To make sure the app works locally before deploying, run `rails s` and visit
-[http://localhost:3000/birds](http://localhost:3000/birds).
+***
 
 ## Deploying
 
