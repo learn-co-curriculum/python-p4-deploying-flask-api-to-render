@@ -455,14 +455,36 @@ of running these two applications together.
 
 Before you move on, make sure you can answer the following questions:
 
-1. When creating a new Rails app from the terminal, what additional flag do you
-   need to use to be able to deploy it on Heroku?
-2. What familiar process is used for deploying code to Heroku? How does the
-   process differ when you're deploying to Heroku vs. developing code locally?
+<details>
+  <summary>
+    <em>What familiar process is used for deploying code to Render?</code></em>
+  </summary>
+
+  <h3>Git</h3>
+  <p>Render integrates natively with GitHub and GitLab. Your application needs
+     to be added manually at first, but syncs automatically upon every new
+     push.</p>
+</details>
+<br/>
+
+<details>
+  <summary>
+    <em>Why did your first deployment fail?</code></em>
+  </summary>
+
+  <h3>The environment variables had not been set.</h3>
+  <p>Your application depends on certain variables to be set, some of which
+     are set outside of the application itself. This is usually because it
+     is meant to be accessible by every file (like the Python version) or
+     because it is meant to be hidden (like the database URL).</p>
+</details>
+<br/>
 
 ## Resources
 
 - [Deploy a Flask App - Render][render flask]
+- [PostgreSQL - Render](https://render.com/docs/databases)
+- [Create a repo - GitHub](https://docs.github.com/en/get-started/quickstart/create-a-repo)
 
 [render dashboard]: https://dashboard.render.com/
 [postgresql wsl]: https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
