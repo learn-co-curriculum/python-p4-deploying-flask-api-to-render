@@ -52,7 +52,7 @@ applications to Render later on.
 
 ### Install PostgreSQL
 
-Heroku requires that you use PostgreSQL for your database instead of SQLite.
+Render requires that you use PostgreSQL for your database instead of SQLite.
 PostgreSQL (or just Postgres for short) is an advanced database management
 system with more features than SQLite. If you don't already have it installed,
 you'll need to set it up.
@@ -196,7 +196,7 @@ Now we're ready to start building our app.
 
 ### Building the Demo App
 
-Next, let's set up our app, models, and migrations to get things started:
+Let's set up our app, models, and migrations to get things started:
 
 ```py
 # app.py
@@ -226,13 +226,6 @@ class Birds(Resource):
         return make_response(jsonify(birds), 200)
 
 api.add_resource(Birds, '/birds')
-
-class BirdByID(Resource):
-    def get(self, id):
-        bird = Bird.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(bird), 200)
-
-api.add_resource(BirdByID, '/birds/<int:id>')
 
 ```
 
@@ -310,8 +303,7 @@ $ python seed.py
 > Unlike with SQLite, the actual database file isn't created in the
 > application's folder;
 > it lives on Render's servers and will not show up in your directory structure
-> at all. If you have problems with this step, see the
-> **Troubleshooting** section below.
+> at all.
 
 To make sure the app works locally before deploying, run `gunicorn app:app` and visit
 [http://localhost:8000/birds](http://localhost:8000/birds).
@@ -324,168 +316,140 @@ To make sure the app works locally before deploying, run `gunicorn app:app` and 
 ## Deploying
 
 Now that we've got some working code, it's time to get that code to run on a
-Heroku server! The process of uploading our code to Heroku is managed by Git.
-This makes it easy to deploy new versions using a tool most developers,
+Render server! The process of uploading our code to Render is managed by
+Git. This makes it easy to deploy new versions using a tool most developers,
 including yourself, are already familiar with.
 
-Make a commit to save your changes:
+Make a commit to save your changes, then push them to a remote repo:
 
 ```console
 $ git add .
-$ git commit -m 'Initial commit'
+$ git commit -m 'Initial commit' 
 ```
 
-Next, you'll need to create an application on Heroku:
+Next, you'll need to create repository in GitHub:
+
+![github create repo form. repo is set to public](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-github-repo.png
+)
+
+...and push your work to the new repo:
 
 ```console
-$ heroku create
+$ git remote add <remote_name> <remote_repo_url>
+$ git push -u <remote_name> <local_branch_name>
 ```
 
-This command will generate a new application in your Heroku account, and
-configure a new remote repository where you can push up your code. You can
-confirm the remote repository was created successfully by running:
+***
 
-```console
-$ git config --list --local | grep heroku
-remote.heroku.url=https://git.heroku.com/aqueous-sierra-44713.git
-remote.heroku.fetch=+refs/heads/*:refs/remotes/heroku/*
+## Configuring the Environment and Deploying
+
+Head back to [the Render dashboard][render dashboard] and click
+"New+" to make a new Web Service. If you connected to GitHub when you signed up,
+you should see a list of all your repos! Find your bird API and click "Connect".
+
+Give your application a name and configure it as seen below:
+
+![configuration screen for a web service in render. the root directory is left
+blank. environment is Python 3. Region is Ohio (US East). Branch is main. Build
+command is "pip install -r requirements.txt". start command is "gunicorn
+app:app"](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-flask.png
+)
+
+Click "Create Web Service" to create your web service. (It will fail, though.)
+
+Before our first successful deployment, we need to click on the "Environment"
+tab and enter two environment variables:
+
+`PYTHON_VERSION` is `3.8.13`.
+
+`DATABASE_URI` is the External Database URL from your PostgreSQL database. Don't
+forget to change the protocol to `postgresql`!
+
+Render will automatically deploy your _working_ application now. Your URL is
+located under your app name at the top of the screen. Click on the link,
+navigate to `/birds`, and view your work in all its glory!
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Black-Capped Chickadee",
+    "species": "Poecile Atricapillus"
+  },
+  {
+    "id": 2,
+    "name": "Grackle",
+    "species": "Quiscalus Quiscula"
+  },
+  {
+    "id": 3,
+    "name": "Common Starling",
+    "species": "Sturnus Vulgaris"
+  },
+  {
+    "id": 4,
+    "name": "Mourning Dove",
+    "species": "Zenaida Macroura"
+  }
+]
 ```
 
-Now, deploying your code is as simple as using `git push` to upload the changes
-from your repository to Heroku:
-
-```console
-$ git push heroku main
-```
-
-> Note: depending on your Git configuration, your default branch might be named
-> `master` or `main`. You can verify which by running
-> `git branch --show-current`. If it's `master`, you'll need to run
-> `git push heroku master` instead.
-
-You've successfully pushed up your code!
-
-## Building and Migrating
-
-After pushing up your code, you'll notice a flurry of activity in the terminal.
-This indicates that Heroku is in the process of building your application, by:
-
-- Setting up a Ruby environment to run your code in
-- Installing the gems for your project with `bundle install`
-- Running `rails server` to start up your server
-
-If the build process succeeds, your app is live and online!
-
-Before visiting the site, let's also set up the database. Remember, the database
-is a separate application from your Rails application. Thankfully, we can get
-it set up easily by running a few Rake commands on the server.
-
-To migrate and seed the database on the server, run:
-
-```console
-$ heroku run rails db:migrate db:seed
-```
-
-When you prefix any command with `heroku run`, it will run that command on the
-server where your application was deployed. This command is very useful for
-troubleshooting: you can even run `heroku run rails c` to open a Rails console
-on the server!
-
-You can now visit the site in the browser by running `heroku open`. Note that,
-because there is no root path (`'/'`) defined in our routes, you will see a
-Page Not Found error when the app opens.
-
-Navigate to the `/birds` endpoint and verify that you are able to see an array
-of JSON data for all the birds in the database. If you aren't able to, check out
-the troubleshooting section below, or the
-[troubleshooting guide on Heroku][troubleshooting guide on heroku].
+***
 
 ## Adding New Features
 
-Since Heroku integrates the deploying process with Git, it's straightforward
+Since Render integrates the deploying process with Git, it's straightforward
 to add new features to your code and deploy them. Let's start by adding a new
-controller action in the `BirdsController`:
+route in `app.py`:
 
-```rb
-def show
-  bird = Bird.find(params[:id])
-  render json: bird
-rescue ActiveRecord::RecordNotFound
-  render json: "Bird not found", status: :not_found
-end
+```py
+class BirdByID(Resource):
+    def get(self, id):
+        bird = Bird.query.filter_by(id=id).first().to_dict()
+        return make_response(jsonify(bird), 200)
+
+api.add_resource(BirdByID, '/birds/<int:id>')
+
 ```
 
-Test your code locally by running `rails s` and visiting
-[http://localhost:3000/birds/1](http://localhost:3000/birds/1).
+Test your code locally by running `gunicorn app:app` and visiting
+[https://localhost:8000/birds/1](https://localhost:8000/birds/1).
 
 After adding this code, make a commit:
 
 ```console
-$ git add app/controllers/birds_controller.rb
-$ git commit -m 'Added show action'
+$ git add app.py
+$ git commit -m 'Added get by ID route'
 ```
 
-Then, to deploy the changes, push the new code up to Heroku:
+Then, to deploy the changes, push the new code up to GitHub:
 
 ```console
-$ git push heroku main
+$ git push
 ```
 
-After pushing new code, Heroku will run through the build process again and
+After pushing new code, Render will run through the build process again and
 deploy your changes. You don't have to run your migrations again since the
 database already exists on the server. You would have to run the migrations if
 you created a new migration file.
 
-## Troubleshooting
-
-If you ran into any errors along the way, here are some things you can try to
-troubleshoot:
-
-- If you're on a Mac and got a server connection error when you tried to run
-  `rails db:create`, one option for solving this problem for Mac users is to
-  install the Postgres app. To do this, first uninstall `postgresql` by running
-  `brew remove postgresql`. Next, download the app from the
-  [Postgres downloads page][] and install it. Launch the app and click
-  "Initialize" to create a new server. You should now be able to run
-  `rails db:create`.
-
-- If you're using WSL and got the following error running `rails db:create`:
-
-  ```txt
-  PG::ConnectionBad: FATAL:  role "yourusername" does not exist
-  ```
-
-  The issue is that you did not create a role in Postgres for the default user
-  account. Check [this video](https://www.youtube.com/watch?v=bQC5izDzOgE) for
-  one possible fix.
-
-- If your app failed to deploy at the build stage, make sure your local
-  environment is set up correctly by following the steps at the beginning of
-  this lesson. Check that you have the latest versions of Ruby and Bundler, and
-  ensure that Postgresql was installed successfully.
-
-- If you deployed successfully, but you ran into issues when you visited the
-  site, make sure you migrated and seeded the database. Also, make sure that
-  your application works locally and try to debug any issues on your local
-  machine before re-deploying. You can also check the logs on the server by
-  running `heroku logs`.
-
-For additional support, check out these guides on Heroku:
-
-- [Deploying a Rails 6 App to Heroku][heroku rails deploying guide]
-- [Rails Troubleshooting on Heroku][troubleshooting guide on heroku]
+***
 
 ## Conclusion
 
-Congrats on deploying your first Rails app to the world wide web! Understanding
+Congrats on deploying your first Flask app to the world wide web! Understanding
 the deployment process and what it takes to run your application on another
 computer is an important step toward becoming a full-stack developer. Like
 anything new, this process can be daunting the first time you try it, but with
 practice and exposure, you'll build confidence over time.
 
 In the next lesson, we'll work on deploying a more complex application with a
-Rails API backend and a React frontend, and talk through some of the challenges
+Flask API backend and a React frontend, and talk through some of the challenges
 of running these two applications together.
+
+***
 
 ## Check For Understanding
 
@@ -499,12 +463,7 @@ Before you move on, make sure you can answer the following questions:
 ## Resources
 
 - [Deploy a Flask App - Render][render flask]
-- [Rails Troubleshooting on Heroku][troubleshooting guide on heroku]
 
 [render dashboard]: https://dashboard.render.com/
-[heroku cli]: https://devcenter.heroku.com/articles/heroku-cli#download-and-install
-[supported runtimes]: https://devcenter.heroku.com/articles/ruby-support#supported-runtimes
 [postgresql wsl]: https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
 [render flask]: https://render.com/docs/deploy-flask
-[troubleshooting guide on heroku]: https://devcenter.heroku.com/articles/getting-started-with-rails6#troubleshooting
-[postgres downloads page]: https://postgresapp.com/downloads.html
