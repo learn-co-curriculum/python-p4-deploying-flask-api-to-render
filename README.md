@@ -309,7 +309,7 @@ To make sure the app works locally before deploying, run `gunicorn app:app` and 
 [http://localhost:8000/birds](http://localhost:8000/birds).
 
 > **NOTE: gunicorn runs on port 8000 by default. Because this does not conflict
-> with any system ports on MacOS, Windows, or Linux, we won't change it here.
+> with any system ports on MacOS, Windows, or Linux, we won't change it here.**
 
 ***
 
