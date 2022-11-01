@@ -139,6 +139,11 @@ $ mkdir bird-app && cd $_
 $ pipenv install Flask gunicorn psycopg2-binary Flask-SQLAlchemy Flask-Migrate SQLAlchemy-Serializer Flask-RESTful
 ```
 
+> **NOTE: You may want to specify versions for these packages when you work on
+> your Phase 4 and Phase 5 projects. This will prevent updates to these modules
+> from breaking your code. You can check all versions with the command
+> `pipenv requirements`.
+
 This will set create an application directory and install some valuable
 libraries for building a RESTful API. Let's also run the following command to
 generate a `requirements.txt` file:
