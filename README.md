@@ -262,8 +262,6 @@ Add this data to the `seed.py` file:
 from app import app
 from models import db, Bird
 
-db.init_app(app)
-
 with app.app_context():
 
     print('Deleting existing birds...')
