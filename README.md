@@ -5,7 +5,7 @@
 - Set up your local environment for deploying with Render.
 - Deploy a basic Flask application to Render.
 
-***
+---
 
 ## Key Vocab
 
@@ -23,7 +23,7 @@
   cost. Some PaaS solutions, such as Render, provide free tiers for small
   applications.
 
-***
+---
 
 ## Introduction
 
@@ -36,7 +36,7 @@ with a React frontend. Since the setup for a Flask-React application is a bit
 trickier, it'll be beneficial to see the setup for Flask alone first. Let's get
 started!
 
-***
+---
 
 ## Environment Setup
 
@@ -48,7 +48,34 @@ following:
 You can sign up at for a free account at
 [https://dashboard.render.com/][render dashboard]. We recommend signing up using
 your GitHub account- this will streamline the process of connecting your
-applications to Render later on.
+applications to Render later on. The instructions below assume you've done that.
+
+Once you've completed the signup process, you will be taken to the Render
+dashboard:
+
+![Render dashboard](https://curriculum-content.s3.amazonaws.com/phase-4/deploying-rails-api/render-dashboard.png)
+
+In order to connect Render to your GitHub account, you'll need to click the "New
+Web Service" button in the "Web Services" box.
+
+You'll then click the "Build and deploy from a Git repository" button.
+
+![select build and deploy from git repo](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/build_deploy_render.png)
+
+On the next page, you will see a GitHub heading on the right side and below that
+a link labeled "Configure account". (If you didn't sign up using GitHub, it will
+say "Connect account" instead.)
+
+![Connect GitHub](https://curriculum-content.s3.amazonaws.com/phase-4/deploying-rails-api/configure-github.png)
+
+Click that link; a modal will appear asking you for permission to install Render
+on your GitHub account:
+
+![Install Render](https://curriculum-content.s3.amazonaws.com/phase-4/deploying-rails-api/install-render.png)
+
+Click "Install." You should then be taken back to the "Create a New Web Service"
+page, which should now show a list of your GitHub repos. We won't create a web
+service just yet so you are free to navigate back to the [Render dashboard][].
 
 ### Install PostgreSQL
 
@@ -120,26 +147,115 @@ service:
 $ brew services start postgresql
 ```
 
-Phew! With that out of the way, let's get started on building our Flask
-application and deploying it to Render.
+Check your Postgres version:
 
-***
+```console
+$ psql --version
+```
+
+### Create the Database on Render
+
+One limitation of Render is that it only allows one PostgreSQL instance to be
+created per user account. With this instance, we can create an app, give it some
+seed data, and deploy it, storing the data in the PostgreSQL instance's
+database. But then what happens if you want to deploy additional apps to Render?
+You can probably see how using a single database for multiple apps could get
+complicated very quickly and potentially cause problems. Fortunately, Render
+allows users to create [multiple databases within a single PostgreSQL
+instance][multiple dbs] so you can have a separate database for each app you
+deploy.
+
+Let's start by creating the PostgreSQL instance, then we'll create the bird
+database.
+
+You need to check which version of Postgresql you have on your local machine.
+Run `psql --version` in your terminal. The output should look something like
+this, but with your version instead:
+
+```console
+$ psql --version
+psql (PostgreSQL) 15.x
+```
+
+Go to the [Render dashboard][], click the "New +" button and select
+"PostgreSQL". Enter a name for your database. This can be whatever you like —
+we're using `my_database`. Select the Postgresql version you have from the
+dropdown.
+
+![Creating a new database](https://curriculum-content.s3.amazonaws.com/phase-4/deploying-rails-api/create-database.png)
+
+Scroll to the bottom of the page and click "Create Database". It may take a few
+minutes to create the database. Leave the database page open — you'll need to
+copy information from it as we proceed.
+
+Next, let's create a database specifically for our bird app. We'll do this using
+the PostgreSQL interactive terminal, [`psql`][psql].
+
+The command to launch the interactive terminal is provided in the Render
+database page. Scroll down to the "Connections" section and copy the PSQL
+command.
+
+![psql command link from render page](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/psql.png)
+
+Paste it into your terminal window and press enter. This command connects you to
+the remote database. You should now see the `psql` command prompt,
+`my_database=>` (there may be some numbers appended to the database name).
+
+```command
+Type "help" for help.
+
+my_database=>
+```
+
+If you type the `\l` command to list the databases, you'll see a table that
+includes `my_database`.
+
+```command
+Type "help" for help.
+
+my_database=> \l
+```
+
+You will need to hit the enter key to exit the database listing and return to
+the PSQL prompt.
+
+To create the database for our bird app, we'll run the `CREATE DATABASE` SQL
+command. Again, you can name your database whatever you like; we're using
+`bird_app_db`. Be sure to include the semi-colon at the end of the command:
+
+```console
+my_database=> CREATE DATABASE bird_app_db;
+```
+
+Now if you run the `\l` command again, you should see that `bird_app_db` has
+been added to the list of databases.
+
+You can now exit `psql` using the `\q` command.
+
+> **Note**: The Render dashboard will not show the information about the
+> `bird_app_db` database; it will only show the name you assigned when you
+> created the PostgreSQL instance on Render (`my_database`). To see any other
+> databases you have on your PostgreSQL instance, you'll need to use `psql`. For
+> now, be sure to make a note of your new database's name as we'll need to use
+> it in the next step.
+
+---
 
 ## Creating a Flask App to Deploy
 
-We'll be following the steps in Render's
-["Deploy a Flask App"][render flask] guide, so if you get
-stuck and are looking for more assistance, check that guide first.
+We'll be following the steps in Render's ["Deploy a Flask App"][render flask]
+guide, so if you get stuck and are looking for more assistance, check that
+guide.
 
-The first thing we'll need to do is create our new Flask application. Make
-sure you're in a non-lab directory, then run:
+The first thing we'll need to do is create our new Flask application. Make sure
+you're in a non-lab directory, then run:
 
 ```console
 $ mkdir bird-app && cd $_
 $ pipenv install Flask gunicorn psycopg2-binary Flask-SQLAlchemy Flask-Migrate SQLAlchemy-Serializer Flask-RESTful
 ```
 
-> **NOTE: You may want to specify versions for these packages when you work on
+> \*\*NOTE: You may want to specify versions for these packages when you work on
 > your Phase 4 and Phase 5 projects. This will prevent updates to these modules
 > from breaking your code. You can check all versions with the command
 > `pipenv requirements`.
@@ -157,51 +273,38 @@ that instead of supporting a local virtual environment through pipenv, it
 supports the creation of an application environment on a PaaS platform. (There
 are some different tools that use this file as well.)
 
-### Creating a PostgreSQL Database on Render
+### Assigning DATABASE_URI
 
-Using SQLite, our database was generated in a file in our application directory.
-With PostgreSQL, the database is stored elsewhere- typically on a server
-dedicated to databases. Ours will be stored on a server at Render.
+To test our Flask app locally, we need to assign the `DATABASE_URI` environment
+variable to reference the bird database we created on Render. Return to the
+[Render dashboard][] and click on the "my_database" link (or whatever you named
+the Postgresql instance). Scroll down to `Connections` and copy the "External
+Database URL".
 
-From your Render dashboard, click the "New+" button and select PostgreSQL:
+![external database url](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/external_db.png)
 
-![dropdown menu containing static site, web service, private service, background
-worker, cron job, postgresql, redis, and blueprint. postgresql is selected.](
-https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres.png
-)
+You will assign this string to the `DATABASE_URI` environment variable, but you
+need to make two modifications to the external database URL string:
 
-Next, configure your database with a name, database name, user, and timezone.
-These can be whichever values you feel are best.
+![modifying database uri](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/database_uri.png)
 
-![form with fields name, database, user, region, postgresql version, and datadog
-api key](
-https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres-config.png
-)
+- Modify the protocol at the beginning of the string to say `postgresql` instead
+  of `postgres`.
+- Modify the database name at the end of the string to say `bird_app_db` instead
+  of `my_database`.
 
-Finally, create your database. It will expire after 90 days; you can always make
-a new one, but there are paid options available as well. For now, select the
-free tier:
-
-![payment options for render databases. the free tier is selected. there is a
-create database button at the bottom that will allow users to finish creating
-their database](
-https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-postgres-payment.png
-)
-
-From here, scroll down in the new database configuration page and copy the
-"External Database URL". Modify the protocol to say `postgresql` instead of
-`postgres` (SQLAlchemy is picky) and run the following command in your project
-root directory:
+Do not modify any other part of the string. Assign the environment variable by
+typing the following in a terminal:
 
 ```console
-$ export DATABASE_URI=<External Database URL goes here>
+$ export DATABASE_URI=<Modified External Database URL goes here>
 ```
-
-Now we're ready to start building our app.
 
 ### Building the Demo App
 
-Let's set up our app, models, and migrations to get things started:
+Let's set up our app, models, and migrations to get things started. You can
+create the files directly within the `bird-app` folder since we _won't_ be
+needing a `server` sub-folder.
 
 ```py
 # app.py
@@ -301,40 +404,46 @@ $ python seed.py
 # => Complete.
 ```
 
-> `flask db upgrade` creates a new PostgreSQL database to be associated with your
-> application based on the configuration on Render and in `models.py`.
+> `flask db upgrade` creates a new PostgreSQL database to be associated with
+> your application based on the configuration on Render and in `models.py`.
 > Unlike with SQLite, the actual database file isn't created in the
-> application's folder;
-> it lives on Render's servers and will not show up in your directory structure
-> at all.
+> application's folder; it lives on Render's servers and will not show up in
+> your directory structure at all.
 
-To make sure the app works locally before deploying, run `gunicorn app:app` and visit
-[http://localhost:8000/birds](http://localhost:8000/birds).
+To make sure the app works locally before deploying, run `gunicorn app:app`.
+
+```console
+$ gunicorn app:app
+```
+
+Navigate to [http://localhost:8000/birds](http://localhost:8000/birds) and
+confirm the app displays the bird data:
+
+![screenprint of birds app on localhost](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/local_birds_app.png)
 
 > **NOTE: gunicorn runs on port 8000 by default. Because this does not conflict
 > with any system ports on MacOS, Windows, or Linux, we won't change it here.**
 
-***
+---
 
 ## Deploying
 
 Now that we've got some working code, it's time to get that code to run on a
-Render server! The process of uploading our code to Render is managed by
-Git. This makes it easy to deploy new versions using a tool most developers,
+Render server! The process of uploading our code to Render is managed by Git.
+This makes it easy to deploy new versions using a tool most developers,
 including yourself, are already familiar with.
 
 Make a commit to save your changes, then push them to a remote repo:
 
 ```console
+$ git init
 $ git add .
-$ git commit -m 'Initial commit' 
+$ git commit -m 'Initial commit'
 ```
 
-Next, you'll need to create repository in GitHub:
+Next, you'll need to create a repository in GitHub:
 
-![github create repo form. repo is set to public](
-https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-github-repo.png
-)
+![github create repo form. repo is set to public](https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-github-repo.png)
 
 ...and push your work to the new repo:
 
@@ -343,36 +452,40 @@ $ git remote add <remote_name> <remote_repo_url>
 $ git push -u <remote_name> <local_branch_name>
 ```
 
-***
+---
 
 ## Configuring the Environment and Deploying
 
-Head back to [the Render dashboard][render dashboard] and click
-"New+" to make a new Web Service. If you connected to GitHub when you signed up,
-you should see a list of all your repos! Find your bird API and click "Connect".
+Head back to [the Render dashboard][render dashboard] and click "New+" to make a
+new Web Service. If you connected to GitHub when you signed up, you should see a
+list of all your repos! Find your bird API and click "Connect".
 
-Give your application a name and configure it as seen below:
+Give your application a name. Render should be able to figure out the github
+repo is for a Flask application and will fill in the Runtime, Build Command, and
+Start Command. If not, configure the application as seen below:
 
 ![configuration screen for a web service in render. the root directory is left
 blank. environment is Python 3. Region is Ohio (US East). Branch is main. Build
 command is "pip install -r requirements.txt". start command is "gunicorn
-app:app"](
-https://curriculum-content.s3.amazonaws.com/python/python-p4-deployment-render-flask.png
-)
+app:app"](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/new_web_service.png)
 
-Click "Create Web Service" to create your web service. (It will fail, though.)
-
-Before our first successful deployment, we need to click on the "Environment"
-tab and enter two environment variables:
+Before our first successful deployment, we need to click on the "Advanced"
+button, then add two environment variables:
 
 `PYTHON_VERSION` is `3.8.13`.
 
 `DATABASE_URI` is the External Database URL from your PostgreSQL database. Don't
-forget to change the protocol to `postgresql`!
+forget to change the protocol to `postgresql` and the database name to
+`bird_app_db`!
 
-Render will automatically deploy your _working_ application now. Your URL is
-located under your app name at the top of the screen. Click on the link,
-navigate to `/birds`, and view your work in all its glory!
+![change render environment variables](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/envir_vars.png)
+
+Scroll to the bottom of the page and click the "Create Web Service" button. It
+may take a few minutes to build and deploy your application.
+
+Your URL is located under your app name at the top of the screen.
+
+Click on the link, navigate to `/birds`, and view your work in all its glory!
 
 ```json
 [
@@ -399,13 +512,13 @@ navigate to `/birds`, and view your work in all its glory!
 ]
 ```
 
-***
+---
 
 ## Adding New Features
 
-Since Render integrates the deploying process with Git, it's straightforward
-to add new features to your code and deploy them. Let's start by adding a new
-route in `app.py`:
+Since Render integrates the deploying process with Git, it's straightforward to
+add new features to your code and deploy them. Let's start by adding a new route
+in `app.py`:
 
 ```py
 class BirdByID(Resource):
@@ -434,11 +547,14 @@ $ git push
 ```
 
 After pushing new code, Render will run through the build process again and
-deploy your changes. You don't have to run your migrations again since the
-database already exists on the server. You would have to run the migrations if
-you created a new migration file.
+deploy your changes. This may take a few minutes. Test to make sure the new
+route works once the deployment is complete.
 
-***
+Note, you don't have to run your migrations again since the database already
+exists on the server. You would have to run the migrations if you created a new
+migration file.
+
+---
 
 ## Conclusion
 
@@ -452,7 +568,7 @@ In the next lesson, we'll work on deploying a more complex application with a
 Flask API backend and a React frontend, and talk through some of the challenges
 of running these two applications together.
 
-***
+---
 
 ## Check For Understanding
 
@@ -468,20 +584,6 @@ Before you move on, make sure you can answer the following questions:
      to be added manually at first, but syncs automatically upon every new
      push.</p>
 </details>
-<br/>
-
-<details>
-  <summary>
-    <em>Why did your first deployment fail?</code></em>
-  </summary>
-
-  <h3>The environment variables had not been set.</h3>
-  <p>Your application depends on certain variables to be set, some of which
-     are set outside of the application itself. This is usually because it
-     is meant to be accessible by every file (like the Python version) or
-     because it is meant to be hidden (like the database URL).</p>
-</details>
-<br/>
 
 ## Resources
 
@@ -490,5 +592,9 @@ Before you move on, make sure you can answer the following questions:
 - [Create a repo - GitHub](https://docs.github.com/en/get-started/quickstart/create-a-repo)
 
 [render dashboard]: https://dashboard.render.com/
-[postgresql wsl]: https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
+[postgresql wsl]:
+  https://docs.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
 [render flask]: https://render.com/docs/deploy-flask
+[multiple dbs]:
+  https://render.com/docs/databases#multiple-databases-in-a-single-postgresql-instance
+[psql]: https://www.postgresql.org/docs/current/app-psql.html
