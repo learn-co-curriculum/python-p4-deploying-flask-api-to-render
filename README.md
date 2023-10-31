@@ -192,7 +192,8 @@ Render will randomly generate identifiers for the "Database" and "User" fields,
 or you can create those yourself if you prefer.
 
 For "Region", you can either select the location closest to you or you can use
-the default selection.
+the default selection. Make sure you use the same region when you are creating
+the web service later in this lesson.
 
 Scroll to the bottom of the page and click "Create Database". It may take a few
 minutes to create the database. Leave the database page open — you'll need to
@@ -472,10 +473,11 @@ list of all your repos! Find your bird API and click "Connect".
 
 Give your application a name. Render should be able to figure out the github
 repo is for a Flask application and will fill in the Runtime, Build Command, and
-Start Command. If not, configure the application as seen below:
+Start Command. If not, configure the application as seen below. Try to specify
+the same region as the database instance.
 
 ![configuration screen for a web service in render. the root directory is left
-blank. environment is Python 3. Region is Ohio (US East). Branch is main. Build
+blank. environment is Python 3. Region is Oregon (US West). Branch is main. Build
 command is "pip install -r requirements.txt". start command is "gunicorn
 app:app"](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/new_web_service.png)
 
@@ -484,11 +486,14 @@ button, then add two environment variables:
 
 `PYTHON_VERSION` is `3.8.13`.
 
-`DATABASE_URI` is the External Database URL from your PostgreSQL database. Don't
-forget to change the protocol to `postgresql` and the database name to
-`bird_app_db`!
+`DATABASE_URI` is the **Internal Database URL** from your PostgreSQL database
+(not External Database URL). Don't forget to change the protocol to `postgresql`
+and the database name to `bird_app_db`!
 
 ![change render environment variables](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/envir_vars.png)
+
+NOTE: If your database instance and web service are in different regions, you
+may need to use the External Database URL for the connection.
 
 Scroll to the bottom of the page and click the "Create Web Service" button. It
 may take a few minutes to build and deploy your application.
