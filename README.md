@@ -556,6 +556,35 @@ migration file.
 
 ---
 
+## Notes on Render's Free Tier
+
+### Free Web Services
+
+According to Render's documentation on its
+[Free Web Services](https://render.com/docs/free#free-web-services):
+
+> Render spins down a Free web service that goes 15 minutes without receiving
+> inbound traffic. Render spins the service back up whenever it next receives a
+> request to process.
+
+> Spinning up a service takes a few seconds, which causes a noticeable delay for
+> incoming requests until the service is back up and running. For example, a
+> browser page load will hang momentarily.
+
+This means that, when you try to navigate to your app in the browser, it might
+take a while to load.
+
+### Free PostgreSQL Databases
+
+With Render's free tier, databases expire after 90 days. This means that, before
+the end of the 90 days, you will need to back up your databases, delete the
+PostgreSQL instance from Render, create a new PostgreSQL instance, and populate
+it from the database backups. Render should send an email warning you that your
+database will be expiring soon.
+
+We will go over the process for backing up and recreating your database — along
+with some other tips for using databases with Render — in the next lesson.
+
 ## Conclusion
 
 Congrats on deploying your first Flask app to the world wide web! Understanding
