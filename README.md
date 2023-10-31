@@ -488,7 +488,11 @@ button, then add two environment variables:
 
 `DATABASE_URI` is the **Internal Database URL** from your PostgreSQL database
 (not External Database URL). Don't forget to change the protocol to `postgresql`
-and the database name to `bird_app_db`!
+and the database name to `bird_app_db`! It should look something like this:
+
+```sh
+postgresql://my_database_user:#################################################/bird_app_db
+```
 
 ![change render environment variables](https://curriculum-content.s3.amazonaws.com/6130/deploy_flask_app/envir_vars.png)
 
