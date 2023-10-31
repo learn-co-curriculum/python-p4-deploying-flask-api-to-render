@@ -179,10 +179,20 @@ psql (PostgreSQL) 15.x
 
 Go to the [Render dashboard][], click the "New +" button and select
 "PostgreSQL". Enter a name for your database. This can be whatever you like —
-we're using `my_database`. Select the Postgresql version you have from the
-dropdown.
+we're using `my_database`.
 
 ![Creating a new database](https://curriculum-content.s3.amazonaws.com/phase-4/deploying-rails-api/create-database.png)
+
+**Note: Hyphens may not be used in the database names; you should use
+underscores instead (e.g., `my_db`, not `my-db`).**
+
+Select the Postgresql version you have from the dropdown.
+
+Render will randomly generate identifiers for the "Database" and "User" fields,
+or you can create those yourself if you prefer.
+
+For "Region", you can either select the location closest to you or you can use
+the default selection.
 
 Scroll to the bottom of the page and click "Create Database". It may take a few
 minutes to create the database. Leave the database page open — you'll need to
